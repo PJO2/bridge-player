@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.16)
+project(bridge_player VERSION 0.1.0 LANGUAGES C)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+add_library(bridge STATIC src/cards.c src/deal.c)
+target_include_directories(bridge PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+function(bridge_strict_warnings target)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -Wpedantic)
+    elseif(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /WX)
+    endif()
+endfunction()
+bridge_strict_warnings(bridge)
+
+include(CTest)
+if(BUILD_TESTING)
+    foreach(suite cards deal board)
+        add_executable(test_${suite} tests/test_${suite}.c)
+        target_link_libraries(test_${suite} PRIVATE bridge)
+        bridge_strict_warnings(test_${suite})
+        add_test(NAME ${suite} COMMAND test_${suite})
+    endforeach()
+endif()
